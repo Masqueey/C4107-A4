@@ -93,7 +93,7 @@ with tf.Session() as sess:
     tf.global_variables_initializer().run()
     writer = tf.summary.FileWriter("cifar/graph",graph=sess.graph) # Added to log graph to file for visualization with TensorBoard.
     saver = tf.train.Saver()
-	saver.restore(sess, "cifar/session.ckpt")
+    saver.restore(sess, "cifar/session.ckpt")
 
     for i in range(10):      # Changed to 5 epochs, from 100.
         training_batch = zip(range(0, len(trX), batch_size),
