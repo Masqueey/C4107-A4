@@ -7,7 +7,7 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
 
-batch_size = 128
+batch_size = 256
 test_size = 256
 
 
@@ -55,10 +55,15 @@ def model(X, w, w1, w2, w_fc, w_o, p_keep_conv, p_keep_hidden, act):            
     pyx = tf.matmul(l5, w_o)
     return pyx
 
-cifar = tf.keras.datasets.cifar10.load_data()
-train, test = cifar
-trX, trY = train
-teX, teY = test
+(trX, trY1), (teX, teY1) = tf.keras.datasets.cifar10.load_data()
+
+trY = np.zeros((len(trY1), 10))                                              # Setup one-hot labels for training
+for i, label in enumerate(trY1):
+    trY[i][int(label)] = 1
+teY = np.zeros((len(teY1), 10))                                               # Setup one-hot labels for test
+for i, label in enumerate(teY1):
+    teY[i][int(label)] = 1
+
 trX = trX.reshape(-1, 32, 32, 3)  # 32x32x3 input img
 teX = teX.reshape(-1, 32, 32, 3)  # 32x32x3 input img
 
@@ -80,21 +85,24 @@ cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=py_x, label
 train_op = tf.train.RMSPropOptimizer(0.001, 0.9).minimize(cost)
 predict_op = tf.argmax(py_x, 1)
 
+print("Done with preparations, starting session.")
+
 # Launch the graph in a session
 with tf.Session() as sess:
     # you need to initialize all variables
     tf.global_variables_initializer().run()
     writer = tf.summary.FileWriter("cifar/graph",graph=sess.graph) # Added to log graph to file for visualization with TensorBoard.
     saver = tf.train.Saver()
+	saver.restore(sess, "cifar/session.ckpt")
 
-    for i in range(5):      # Changed to 5 epochs, from 100.
+    for i in range(10):      # Changed to 5 epochs, from 100.
         training_batch = zip(range(0, len(trX), batch_size),
                              range(batch_size, len(trX)+1, batch_size))
         for start, end in training_batch:
 #            sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end],
 #                                          p_keep_conv: 0.8, p_keep_hidden: 0.5})
             sess.run(train_op, feed_dict={X: trX[start:end], Y: trY[start:end],
-                                          p_keep_conv: 1, p_keep_hidden: 1})    # Dropouts to 1 to "turn off" drop out
+                                          p_keep_conv: 0.8, p_keep_hidden: 0.5})    # Dropouts to 1 to "turn off" drop out
 
         test_indices = np.arange(len(teX)) # Get A Test Batch
         np.random.shuffle(test_indices)
